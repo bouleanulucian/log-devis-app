@@ -5,6 +5,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Costructor - Logiciel de Devis Bâtiment</title>
+  <script>
+    window.addEventListener('error', function (event) {
+      document.body.innerHTML = '<div style="color:red; padding:20px; font-family:sans-serif;"><h1>Global Error</h1><pre>' + event.message + '\n' + event.filename + ':' + event.lineno + '</pre></div>';
+    });
+    window.addEventListener('unhandledrejection', function (event) {
+      document.body.innerHTML = '<div style="color:red; padding:20px; font-family:sans-serif;"><h1>Unhandled Rejection</h1><pre>' + event.reason + '</pre></div>';
+    });
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
