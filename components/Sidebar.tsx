@@ -25,6 +25,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView }) =
     { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
     { id: 'quotes', label: 'Devis', icon: FileText },
     { id: 'clients', label: 'Clients', icon: Users },
+    { id: 'projects', label: 'Chantiers', icon: HardHat },
     { id: 'templates', label: 'Șabloane', icon: Files },
     { id: 'invoices', label: 'Facturi', icon: Receipt },
     { id: 'reports', label: 'Rapoarte', icon: BarChart3 },

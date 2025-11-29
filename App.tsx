@@ -9,6 +9,7 @@ import { Dashboard } from './components/Dashboard';
 import { TemplateManager } from './components/TemplateManager';
 import { InvoiceList } from './components/InvoiceList';
 import { InvoiceEditor } from './components/InvoiceEditor';
+import { ProjectList } from './components/ProjectList';
 import { NotificationCenter } from './components/NotificationCenter';
 import { ReportsView } from './components/ReportsView';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
@@ -460,6 +461,9 @@ const App: React.FC = () => {
 
       <div className={`flex-1 flex flex-col h-screen ${currentView !== 'quote-editor' ? 'ml-64' : ''}`}>
         {/* Header with Notifications and Language Switcher */}
+        {currentView === 'projects' && (
+          <ProjectList />
+        )}
         {currentView !== 'quote-editor' && (
           <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-end gap-3">
             <NotificationCenter

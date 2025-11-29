@@ -6,37 +6,74 @@ interface ClientModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (client: Client) => void;
+    client?: Client; // Optional client for editing
 }
 
-export const ClientModal: React.FC<ClientModalProps> = ({ isOpen, onClose, onSave }) => {
+export const ClientModal: React.FC<ClientModalProps> = ({ isOpen, onClose, onSave, client }) => {
     const [activeTab, setActiveTab] = useState<'info' | 'accounting' | 'other'>('info');
-    const [type, setType] = useState<'Particulier' | 'Professionnel'>('Particulier');
+    const [type, setType] = useState<'Particulier' | 'Professionnel'>(client?.type || 'Particulier');
 
     // Form State
     const [civility, setCivility] = useState('M.');
-    const [lastName, setLastName] = useState('');
-    const [firstName, setFirstName] = useState('');
-    const [address, setAddress] = useState('');
-    const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
-    const [companyName, setCompanyName] = useState('');
+    const [lastName, setLastName] = useState(client?.type === 'Particulier' ? client.name.split(' ').pop() || '' : '');
+    const [firstName, setFirstName] = useState(client?.type === 'Particulier' ? client.name.split(' ').slice(0, -1).join(' ') || '' : '');
+    const [address, setAddress] = useState(client?.address || '');
+    const [email, setEmail] = useState(client?.email || '');
+    const [phone, setPhone] = useState(client?.phone || '');
+    const [companyName, setCompanyName] = useState(client?.type === 'Professionnel' ? client.name : '');
+
+    // Reset state when client changes or modal opens
+    React.useEffect(() => {
+        if (isOpen) {
+            if (client) {
+                setType(client.type);
+                setAddress(client.address);
+                setEmail(client.email);
+                setPhone(client.phone);
+                if (client.type === 'Professionnel') {
+                    setCompanyName(client.name);
+                    setLastName('');
+                    setFirstName('');
+                } else {
+                    const parts = client.name.split(' ');
+                    setLastName(parts.length > 1 ? parts.pop() || '' : parts[0]);
+                    setFirstName(parts.length > 1 ? parts.join(' ') : '');
+                    setCompanyName('');
+                }
+            } else {
+                // Reset for new client
+                setType('Particulier');
+                setCivility('M.');
+                setLastName('');
+                setFirstName('');
+                setAddress('');
+                setEmail('');
+                setPhone('');
+                setCompanyName('');
+            }
+        }
+    }, [isOpen, client]);
 
     if (!isOpen) return null;
 
     const handleSave = () => {
-        if (!lastName) {
+        if (type === 'Particulier' && !lastName) {
             alert('Le nom est requis');
+            return;
+        }
+        if (type === 'Professionnel' && !companyName) {
+            alert("Le nom de l'entreprise est requis");
             return;
         }
 
         const newClient: Client = {
-            id: crypto.randomUUID(),
-            name: type === 'Professionnel' && companyName ? companyName : `${firstName} ${lastName}`.trim(),
+            id: client?.id || crypto.randomUUID(),
+            name: type === 'Professionnel' ? companyName : `${firstName} ${lastName}`.trim(),
             email,
             phone,
             address,
             type,
-            notes: ''
+            notes: client?.notes || ''
         };
 
         onSave(newClient);
@@ -50,7 +87,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ isOpen, onClose, onSav
                 {/* Header */}
                 <div className="flex justify-between items-center p-6 border-b border-gray-100">
                     <div className="flex items-center gap-3">
-                        <h2 className="text-xl font-bold text-gray-900">Ajouter un {type === 'Particulier' ? 'client' : 'contact pro'}</h2>
+                        <h2 className="text-xl font-bold text-gray-900">{client ? 'Modifier le contact' : `Ajouter un ${type === 'Particulier' ? 'client' : 'contact pro'}`}</h2>
                         <div className="flex bg-gray-100 rounded-lg p-1">
                             <button
                                 onClick={() => setType('Particulier')}
@@ -218,7 +255,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ isOpen, onClose, onSav
                         onClick={handleSave}
                         className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-all transform active:scale-95"
                     >
-                        Créer le contact
+                        {client ? 'Enregistrer' : 'Créer le contact'}
                     </button>
                 </div>
 

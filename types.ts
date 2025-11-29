@@ -91,4 +91,5 @@ export type ViewState =
   | 'templates'
   | 'invoices'
   | 'invoice-editor'
-  | 'reports';
+  | 'reports'
+  | 'projects';
