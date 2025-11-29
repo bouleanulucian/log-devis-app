@@ -1,7 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { QuoteSection, UnitType } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+// Remove top-level initialization to prevent crash on load
+// const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 export const generateQuoteFromDescription = async (description: string, currency: string): Promise<QuoteSection[]> => {
 
@@ -10,6 +11,9 @@ export const generateQuoteFromDescription = async (description: string, currency
   if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY') {
     throw new Error("⚠️ Clé API Gemini manquante! Configurez VITE_GEMINI_API_KEY dans .env.local");
   }
+
+  // Initialize lazily
+  const ai = new GoogleGenAI({ apiKey });
 
   const prompt = `
     Rôle : Tu es un expert en bâtiment et économiste de la construction qualifié (RGE) en France.
