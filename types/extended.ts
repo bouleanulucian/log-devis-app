@@ -16,11 +16,11 @@ export interface QuoteTemplate {
   tags?: string[];
 }
 
-export type TemplateCategory = 
-  | 'Construction' 
-  | 'Rénovation' 
-  | 'Plomberie' 
-  | 'Électricité' 
+export type TemplateCategory =
+  | 'Construction'
+  | 'Rénovation'
+  | 'Plomberie'
+  | 'Électricité'
   | 'General'
   | 'Autre';
 
@@ -48,10 +48,10 @@ export interface VersionDiff {
 // NOTIFICATION TYPES
 // ============================================================================
 
-export type NotificationType = 
-  | 'expiry-warning' 
-  | 'approval-request' 
-  | 'status-change' 
+export type NotificationType =
+  | 'expiry-warning'
+  | 'approval-request'
+  | 'status-change'
   | 'system'
   | 'payment-due'
   | 'quote-accepted'
@@ -73,12 +73,12 @@ export interface Notification {
 // INVOICE TYPES
 // ============================================================================
 
-export type InvoiceStatus = 
-  | 'draft' 
-  | 'sent' 
-  | 'partial' 
-  | 'paid' 
-  | 'overdue' 
+export type InvoiceStatus =
+  | 'draft'
+  | 'sent'
+  | 'partial'
+  | 'paid'
+  | 'overdue'
   | 'cancelled';
 
 export interface Payment {
@@ -100,21 +100,22 @@ export interface Invoice {
   issueDate: string;
   dueDate: string;
   status: InvoiceStatus;
-  
+  type: 'standard' | 'deposit' | 'progress' | 'final'; // Added type distinction
+
   // Content (copied from quote)
   sections: QuoteSection[];
-  
+
   // Amounts
   totalHT: number;
   totalTTC: number;
   discount?: number;
   discountType?: 'percentage' | 'fixed';
-  
+
   // Payment tracking
   payments: Payment[];
   amountPaid: number;
   amountDue: number;
-  
+
   // Additional info
   notes?: string;
   currency: string;
@@ -198,29 +199,29 @@ export interface QuoteExtensions {
   // Discount
   discount?: number;
   discountType?: 'percentage' | 'fixed';
-  
+
   // Tax
   taxRate?: number; // TVA percentage, default 20
-  
+
   // Margin
   margin?: number; // profit margin percentage
-  
+
   // Template
   templateId?: string;
-  
+
   // Version control
   versionHistory?: string[]; // array of QuoteVersion IDs
   currentVersion?: number;
-  
+
   // Workflow
   approvalWorkflow?: WorkflowState;
-  
+
   // Invoice link
   invoiceId?: string;
-  
+
   // Categorization
   tags?: string[];
-  
+
   // Metadata
   createdBy?: string;
   lastModifiedBy?: string;

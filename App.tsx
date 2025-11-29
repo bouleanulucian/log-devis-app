@@ -327,9 +327,31 @@ const App: React.FC = () => {
 
   // --- Invoice Actions ---
 
-  const handleCreateInvoice = () => {
+  const handleCreateInvoice = (invoiceData?: Partial<Invoice>) => {
+    const newInvoice: Invoice = {
+      id: crypto.randomUUID(),
+      number: `FAC${new Date().getFullYear().toString().substring(2)}${Math.floor(Math.random() * 1000)}`,
+      quoteId: '',
+      clientId: '',
+      clientName: '',
+      siteName: '',
+      issueDate: new Date().toISOString().split('T')[0],
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      status: 'draft',
+      type: 'standard',
+      sections: [],
+      totalHT: 0,
+      totalTTC: 0,
+      payments: [],
+      amountPaid: 0,
+      amountDue: 0,
+      currency: '€',
+      ...invoiceData // Override with provided data (e.g. from modal)
+    };
+
+    setInvoices([newInvoice, ...invoices]);
+    setEditingInvoiceId(newInvoice.id);
     setCurrentView('invoice-editor');
-    setEditingInvoiceId(null);
   };
 
   const handleEditInvoice = (invoice: Invoice) => {
@@ -379,6 +401,7 @@ const App: React.FC = () => {
             onCreateQuote={handleCreateQuote}
             onDuplicateQuote={handleDuplicateQuote}
             onDeleteQuote={handleDeleteQuote}
+            onCreateInvoice={handleCreateInvoice}
           />
         );
       case 'quote-editor':

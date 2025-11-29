@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Quote, Client } from '../types';
-import { Search, Plus, List as ListIcon, LayoutGrid, MoreHorizontal, Copy, Trash2, Download, ChevronDown } from 'lucide-react';
+import { Invoice } from '../types/extended';
+import { Search, Plus, List as ListIcon, LayoutGrid, MoreHorizontal, Copy, Trash2, Download, ChevronDown, FileText } from 'lucide-react';
 import { ExportService } from '../services/exportService';
+import { InvoiceCreationModal } from './InvoiceCreationModal';
 
 interface QuoteListProps {
   quotes: Quote[];
@@ -10,6 +12,7 @@ interface QuoteListProps {
   onCreateQuote: () => void;
   onDuplicateQuote: (quote: Quote) => void;
   onDeleteQuote: (id: string) => void;
+  onCreateInvoice: (invoiceData: Partial<Invoice>) => void;
 }
 
 export const QuoteList: React.FC<QuoteListProps> = ({
@@ -18,11 +21,22 @@ export const QuoteList: React.FC<QuoteListProps> = ({
   onSelectQuote,
   onCreateQuote,
   onDeleteQuote,
-  onDuplicateQuote
+  onDuplicateQuote,
+  onCreateInvoice
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
   const [showExportMenu, setShowExportMenu] = useState(false);
+
+  // Invoice Modal State
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [selectedQuoteForInvoice, setSelectedQuoteForInvoice] = useState<Quote | null>(null);
+
+  const handleInvoiceClick = (e: React.MouseEvent, quote: Quote) => {
+    e.stopPropagation();
+    setSelectedQuoteForInvoice(quote);
+    setShowInvoiceModal(true);
+  };
 
   const filteredQuotes = quotes.filter(quote =>
     quote.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -195,6 +209,13 @@ export const QuoteList: React.FC<QuoteListProps> = ({
                     <td className="py-4 px-6 text-right">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
+                          onClick={(e) => handleInvoiceClick(e, quote)}
+                          className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                          title="Facturer"
+                        >
+                          <FileText size={16} />
+                        </button>
+                        <button
                           onClick={(e) => { e.stopPropagation(); onDuplicateQuote(quote); }}
                           className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
                           title="Dupliquer"
@@ -248,6 +269,13 @@ export const QuoteList: React.FC<QuoteListProps> = ({
                     <p className="text-sm text-gray-500 mb-3 line-clamp-2 h-10">{quote.title || 'Sans titre'}</p>
                     <div className="flex justify-between items-center pt-3 border-t border-gray-50">
                       <span className="font-bold text-gray-900">{quote.totalTTC.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</span>
+                      <button
+                        onClick={(e) => handleInvoiceClick(e, quote)}
+                        className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                        title="Facturer"
+                      >
+                        <FileText size={16} />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -255,6 +283,15 @@ export const QuoteList: React.FC<QuoteListProps> = ({
             </div>
           ))}
         </div>
+      )}
+
+      {selectedQuoteForInvoice && (
+        <InvoiceCreationModal
+          isOpen={showInvoiceModal}
+          onClose={() => setShowInvoiceModal(false)}
+          quote={selectedQuoteForInvoice}
+          onCreateInvoice={onCreateInvoice}
+        />
       )}
     </div>
   );
