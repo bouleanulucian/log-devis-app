@@ -9,7 +9,68 @@ export const generateQuoteFromDescription = async (description: string, currency
   // Check if API key exists
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY') {
-    throw new Error("⚠️ Clé API Gemini manquante! Configurez VITE_GEMINI_API_KEY dans .env.local");
+    // DEMO MODE: Return mock data instead of throwing error
+    console.warn("⚠️ Mode Démo activé (Pas de clé API)");
+    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
+
+    return [
+      {
+        id: crypto.randomUUID(),
+        title: "Maçonnerie - Clôture",
+        items: [
+          {
+            id: crypto.randomUUID(),
+            type: 'item',
+            description: "Fouille en rigole pour fondations de clôture (0.40x0.40m)",
+            quantity: 8, // 20ml * 0.4
+            unit: 'm3',
+            unitPrice: 45,
+            vatRate: 20,
+            total: 360
+          },
+          {
+            id: crypto.randomUUID(),
+            type: 'item',
+            description: "Béton de fondation C25/30 armé pour semelle filante",
+            quantity: 3.2, // 20ml * 0.4 * 0.4
+            unit: 'm3',
+            unitPrice: 180,
+            vatRate: 20,
+            total: 576
+          },
+          {
+            id: crypto.randomUUID(),
+            type: 'item',
+            description: "Élévation en parpaings creux 20x20x50 (H=2.00m)",
+            quantity: 40, // 20ml * 2m
+            unit: 'm²',
+            unitPrice: 65,
+            vatRate: 20,
+            total: 2600
+          },
+          {
+            id: crypto.randomUUID(),
+            type: 'item',
+            description: "Enduit monocouche finition grattée sur 2 faces",
+            quantity: 80, // 40m2 * 2
+            unit: 'm²',
+            unitPrice: 35,
+            vatRate: 20,
+            total: 2800
+          },
+          {
+            id: crypto.randomUUID(),
+            type: 'item',
+            description: "Chapeau de mur plat ton pierre",
+            quantity: 20,
+            unit: 'ml',
+            unitPrice: 28,
+            vatRate: 20,
+            total: 560
+          }
+        ]
+      }
+    ];
   }
 
   // Initialize lazily
