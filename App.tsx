@@ -391,6 +391,7 @@ const App: React.FC = () => {
             onBack={() => setCurrentView('quotes')}
             onDelete={handleDeleteQuote}
             onDuplicate={handleDuplicateQuote}
+            onClientCreate={handleAddClient}
           />
         );
       case 'templates':

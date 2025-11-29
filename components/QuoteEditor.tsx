@@ -2,6 +2,8 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { QuoteSection, QuoteItem, UnitType, Quote, QuoteStatus, Client } from '../types';
 import { generateQuoteFromDescription } from '../services/geminiService';
 import { QuoteTable } from './QuoteTable';
+import { ClientModal } from './ClientModal';
+import { ProjectModal } from './ProjectModal';
 import {
    Plus,
    Sparkles,
@@ -33,7 +35,10 @@ import {
    ArrowDown,
    Scissors,
    Save,
-   ListChecks
+   ListChecks,
+   Building,
+   UserPlus,
+   MapPin
 } from 'lucide-react';
 
 interface QuoteEditorProps {
@@ -43,6 +48,7 @@ interface QuoteEditorProps {
    onBack: () => void;
    onDelete: (quoteId: string) => void;
    onDuplicate: (quote: Quote) => void;
+   onClientCreate: (client: Client) => void; // Add this prop
 }
 
 export const QuoteEditor: React.FC<QuoteEditorProps> = ({
@@ -51,7 +57,8 @@ export const QuoteEditor: React.FC<QuoteEditorProps> = ({
    onSave,
    onBack,
    onDelete,
-   onDuplicate
+   onDuplicate,
+   onClientCreate
 }) => {
    const [quote, setQuote] = useState<Quote>(initialQuote);
    const [isGenerating, setIsGenerating] = useState(false);
@@ -60,10 +67,18 @@ export const QuoteEditor: React.FC<QuoteEditorProps> = ({
    const [targetSectionId, setTargetSectionId] = useState<string | null>(null);
    const [showMargins, setShowMargins] = useState(false);
 
+   // Modal States
+   const [showClientModal, setShowClientModal] = useState(false);
+   const [showProjectModal, setShowProjectModal] = useState(false);
+   const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
+   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
+
    // Dropdown States
    const [activeDropdown, setActiveDropdown] = useState<'convert' | 'more' | 'none'>('none');
    const [showSettingsModal, setShowSettingsModal] = useState(false);
    const dropdownRef = useRef<HTMLDivElement>(null);
+   const clientDropdownRef = useRef<HTMLDivElement>(null);
+   const projectDropdownRef = useRef<HTMLDivElement>(null);
 
    useEffect(() => {
       setQuote(initialQuote);
@@ -75,10 +90,31 @@ export const QuoteEditor: React.FC<QuoteEditorProps> = ({
          if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
             setActiveDropdown('none');
          }
+         if (clientDropdownRef.current && !clientDropdownRef.current.contains(event.target as Node)) {
+            setIsClientDropdownOpen(false);
+         }
+         if (projectDropdownRef.current && !projectDropdownRef.current.contains(event.target as Node)) {
+            setIsProjectDropdownOpen(false);
+         }
       };
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
    }, []);
+
+   const handleClientSelect = (client: Client) => {
+      updateQuote({ clientId: client.id, clientName: client.name });
+      setIsClientDropdownOpen(false);
+   };
+
+   const handleProjectSave = (data: { name: string, address: string, startDate: string, endDate: string }) => {
+      updateQuote({
+         siteName: data.name,
+         title: data.name, // Use project name as quote title
+         startDate: data.startDate,
+         // duration: calculate duration if needed
+      });
+      // Ideally we would save the project to a projects list here
+   };
 
    const updateQuote = (updates: Partial<Quote>, shouldSave = false) => {
       const updatedQuote = { ...quote, ...updates };
@@ -333,15 +369,14 @@ export const QuoteEditor: React.FC<QuoteEditorProps> = ({
                </div>
 
                <div className="flex items-center gap-3">
-                  <button onClick={() => setShowSettingsModal(true)} className="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Paramètres">
-                     <Edit size={18} />
+                  <button className="flex items-center gap-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium border border-gray-200 bg-white">
+                     <Eye size={16} /> Aperçu
                   </button>
-                  <div className="h-6 w-px bg-gray-200 mx-1"></div>
-                  <button onClick={() => window.print()} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium">
-                     <Printer size={16} /> Imprimer
-                  </button>
-                  <button onClick={handleSave} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow-sm transition-colors text-sm font-medium">
+                  <button onClick={handleSave} className="flex items-center gap-2 text-gray-700 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium border border-gray-200 bg-white">
                      <Save size={16} /> Enregistrer
+                  </button>
+                  <button onClick={() => { handleSave(); updateQuote({ status: 'Finalisé' }, true); }} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow-sm transition-colors text-sm font-medium">
+                     <Check size={16} /> Enregistrer et finaliser
                   </button>
                </div>
             </div>
@@ -353,41 +388,146 @@ export const QuoteEditor: React.FC<QuoteEditorProps> = ({
                   {/* Document Content */}
                   <div className="p-[15mm] md:p-[20mm]">
 
-                     {/* Header Section */}
-                     <div className="flex justify-between items-start mb-12">
-                        <div className="w-1/2">
-                           <div className="mb-6">
-                              <h1 className="text-2xl font-bold text-gray-900 mb-2">DEVIS</h1>
-                              <p className="text-sm text-gray-500">N° {quote.number}</p>
-                              <p className="text-sm text-gray-500">Date: {new Date(quote.date).toLocaleDateString('fr-FR')}</p>
-                              <p className="text-sm text-gray-500">Valable jusqu'au: {new Date(quote.expiryDate).toLocaleDateString('fr-FR')}</p>
+                     {/* Header Section - Client & Chantier Cards */}
+                     <div className="grid grid-cols-2 gap-6 mb-8">
+
+                        {/* Client Card */}
+                        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative">
+                           <div className="flex items-center gap-2 mb-3">
+                              <div className="bg-indigo-100 p-1.5 rounded-full text-indigo-600">
+                                 <Users size={16} />
+                              </div>
+                              <h3 className="font-bold text-gray-700 text-sm">Client</h3>
                            </div>
 
-                           <div className="mb-6">
-                              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Intitulé du projet</label>
-                              <input
-                                 value={quote.title}
-                                 onChange={(e) => updateQuote({ title: e.target.value })}
-                                 className="w-full font-serif text-lg text-gray-900 border-b border-gray-200 focus:border-indigo-500 outline-none py-1 placeholder-gray-300"
-                                 placeholder="Ex: Rénovation Appartement..."
-                              />
+                           <div className="relative" ref={clientDropdownRef}>
+                              <button
+                                 onClick={() => setIsClientDropdownOpen(!isClientDropdownOpen)}
+                                 className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-sm transition-colors text-left"
+                              >
+                                 <span className={quote.clientName ? "text-gray-900 font-medium" : "text-gray-400"}>
+                                    {quote.clientName || "Ajouter ou rechercher un client..."}
+                                 </span>
+                                 <ChevronDown size={16} className="text-gray-400" />
+                              </button>
+
+                              {isClientDropdownOpen && (
+                                 <div className="absolute top-full left-0 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
+                                    <button
+                                       onClick={() => { setShowClientModal(true); setIsClientDropdownOpen(false); }}
+                                       className="w-full flex items-center gap-2 px-4 py-3 text-indigo-600 hover:bg-indigo-50 font-medium text-sm border-b border-gray-100"
+                                    >
+                                       <Plus size={16} /> Nouveau client
+                                    </button>
+                                    {clients.map(client => (
+                                       <button
+                                          key={client.id}
+                                          onClick={() => handleClientSelect(client)}
+                                          className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700 flex flex-col"
+                                       >
+                                          <span className="font-medium">{client.name}</span>
+                                          <span className="text-xs text-gray-400">{client.address}</span>
+                                       </button>
+                                    ))}
+                                 </div>
+                              )}
                            </div>
                         </div>
 
-                        <div className="w-1/3 bg-gray-50 p-4 rounded-lg border border-gray-100">
-                           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Client</h3>
-                           <select
-                              value={quote.clientId}
-                              onChange={(e) => {
-                                 const c = clients.find(cl => cl.id === e.target.value);
-                                 if (c) updateQuote({ clientId: c.id, clientName: c.name });
-                              }}
-                              className="w-full font-bold text-gray-900 bg-transparent border-none p-0 focus:ring-0 cursor-pointer text-sm mb-1"
-                           >
-                              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                           </select>
-                           <div className="text-sm text-gray-600 whitespace-pre-line">
-                              {currentClient?.address || 'Adresse non renseignée'}
+                        {/* Chantier Card */}
+                        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative">
+                           <div className="flex items-center gap-2 mb-3">
+                              <div className="bg-orange-100 p-1.5 rounded-full text-orange-600">
+                                 <HardHat size={16} />
+                              </div>
+                              <h3 className="font-bold text-gray-700 text-sm">Chantier</h3>
+                           </div>
+
+                           <div className="relative" ref={projectDropdownRef}>
+                              <button
+                                 onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
+                                 className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-sm transition-colors text-left"
+                              >
+                                 <span className={quote.siteName ? "text-gray-900 font-medium" : "text-gray-400"}>
+                                    {quote.siteName || "Ajouter ou rechercher un chantier..."}
+                                 </span>
+                                 <ChevronDown size={16} className="text-gray-400" />
+                              </button>
+
+                              {isProjectDropdownOpen && (
+                                 <div className="absolute top-full left-0 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-50">
+                                    <button
+                                       onClick={() => { setShowProjectModal(true); setIsProjectDropdownOpen(false); }}
+                                       className="w-full flex items-center gap-2 px-4 py-3 text-indigo-600 hover:bg-indigo-50 font-medium text-sm"
+                                    >
+                                       <Plus size={16} /> Nouveau chantier
+                                    </button>
+                                    {/* Recent projects could go here */}
+                                 </div>
+                              )}
+                           </div>
+                        </div>
+
+                     </div>
+
+                     {/* Dates Row */}
+                     <div className="grid grid-cols-5 gap-4 mb-8 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                        <div>
+                           <label className="block text-xs font-medium text-gray-500 mb-1">Date d'émission</label>
+                           <div className="relative">
+                              <input
+                                 type="date"
+                                 value={quote.date}
+                                 onChange={(e) => updateQuote({ date: e.target.value })}
+                                 className="w-full text-sm font-medium text-gray-900 bg-transparent border-none p-0 focus:ring-0"
+                              />
+                           </div>
+                        </div>
+                        <div className="border-l border-gray-100 pl-4">
+                           <label className="block text-xs font-medium text-gray-500 mb-1">Date d'expiration</label>
+                           <div className="relative">
+                              <input
+                                 type="date"
+                                 value={quote.expiryDate}
+                                 onChange={(e) => updateQuote({ expiryDate: e.target.value })}
+                                 className="w-full text-sm font-medium text-gray-900 bg-transparent border-none p-0 focus:ring-0"
+                              />
+                           </div>
+                        </div>
+                        <div className="border-l border-gray-100 pl-4">
+                           <label className="block text-xs font-medium text-gray-500 mb-1">Visite préalable</label>
+                           <div className="relative">
+                              <input
+                                 type="text"
+                                 value={quote.visitDate || ''}
+                                 onChange={(e) => updateQuote({ visitDate: e.target.value })}
+                                 placeholder="Non précisée"
+                                 className="w-full text-sm font-medium text-gray-900 bg-transparent border-none p-0 focus:ring-0 placeholder-gray-400"
+                              />
+                           </div>
+                        </div>
+                        <div className="border-l border-gray-100 pl-4">
+                           <label className="block text-xs font-medium text-gray-500 mb-1">Début des travaux</label>
+                           <div className="relative">
+                              <input
+                                 type="date"
+                                 value={quote.startDate || ''}
+                                 onChange={(e) => updateQuote({ startDate: e.target.value })}
+                                 className="w-full text-sm font-medium text-gray-900 bg-transparent border-none p-0 focus:ring-0"
+                              />
+                           </div>
+                        </div>
+                        <div className="border-l border-gray-100 pl-4">
+                           <label className="block text-xs font-medium text-gray-500 mb-1">Durée estimée</label>
+                           <div className="flex items-center gap-2">
+                              <input
+                                 type="text"
+                                 value={quote.duration || ''}
+                                 onChange={(e) => updateQuote({ duration: e.target.value })}
+                                 placeholder="15"
+                                 className="w-12 text-sm font-medium text-gray-900 bg-transparent border-none p-0 focus:ring-0 placeholder-gray-400 text-right"
+                              />
+                              <span className="text-sm text-gray-500">jours</span>
                            </div>
                         </div>
                      </div>
@@ -624,6 +764,22 @@ export const QuoteEditor: React.FC<QuoteEditorProps> = ({
                </div>
             </div>
          )}
+
+         <ClientModal
+            isOpen={showClientModal}
+            onClose={() => setShowClientModal(false)}
+            onSave={(client) => {
+               onClientCreate(client);
+               handleClientSelect(client);
+            }}
+         />
+
+         <ProjectModal
+            isOpen={showProjectModal}
+            onClose={() => setShowProjectModal(false)}
+            onSave={handleProjectSave}
+            clients={clients}
+         />
 
       </div>
    );
