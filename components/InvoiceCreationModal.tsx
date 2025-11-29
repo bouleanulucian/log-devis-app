@@ -77,7 +77,7 @@ export const InvoiceCreationModal: React.FC<InvoiceCreationModalProps> = ({ isOp
                             <FileText size={20} />
                         </div>
                         <div>
-                            <p className="text-sm text-indigo-900 font-medium">Devis de {quote.totalTTC.toLocaleString('fr-FR', { style: 'currency', currency: quote.currency })}</p>
+                            <p className="text-sm text-indigo-900 font-medium">Devis de {quote.totalTTC.toLocaleString('fr-FR', { style: 'currency', currency: quote.currency === '€' ? 'EUR' : quote.currency })}</p>
                             <p className="text-xs text-indigo-700">Client: {quote.clientName}</p>
                         </div>
                         <div className="ml-auto">
@@ -147,10 +147,10 @@ export const InvoiceCreationModal: React.FC<InvoiceCreationModalProps> = ({ isOp
                     <div className="pt-4 border-t border-gray-100">
                         <div className="flex justify-between items-center mb-2">
                             <span className="text-gray-600 font-medium">Total TTC à facturer</span>
-                            <span className="text-xl font-bold text-indigo-600">{amount.toLocaleString('fr-FR', { style: 'currency', currency: quote.currency })}</span>
+                            <span className="text-xl font-bold text-indigo-600">{amount.toLocaleString('fr-FR', { style: 'currency', currency: quote.currency === '€' ? 'EUR' : quote.currency })}</span>
                         </div>
                         <p className="text-xs text-gray-500 text-right">
-                            {invoiceType === 'deposit' ? `${amount.toLocaleString('fr-FR', { style: 'currency', currency: quote.currency })} / ${quote.totalTTC.toLocaleString('fr-FR', { style: 'currency', currency: quote.currency })}` : ''}
+                            {invoiceType === 'deposit' ? `${amount.toLocaleString('fr-FR', { style: 'currency', currency: quote.currency === '€' ? 'EUR' : quote.currency })} / ${quote.totalTTC.toLocaleString('fr-FR', { style: 'currency', currency: quote.currency === '€' ? 'EUR' : quote.currency })}` : ''}
                         </p>
                     </div>
 
